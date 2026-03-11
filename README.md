@@ -476,72 +476,107 @@ await pool.query(`SELECT * FROM products WHERE id = ${productId}`);
 ```
 
 ---
+# Deployment Guide (Replit)
 
-## Deployment Guide
+## Prerequisites
+Before deploying the application, ensure the following requirements are met:
 
-### Prerequisites for Deployment
-1. GitHub account with repository push access
-2. Supabase account with PostgreSQL database
-3. Render account for backend hosting
-4. Vercel account for frontend hosting
+- A **Replit account**
+- The **GitHub repository imported into Replit**
+- Basic knowledge of managing environment variables
 
-### Phase 1: Database Setup (Supabase)
+---
 
-1. Create Supabase project at [supabase.com](https://supabase.com)
-2. Navigate to **SQL Editor**
-3. Copy entire contents from `backend/sql/schema.sql`
-4. Execute SQL to create tables
-5. Retrieve **Session Pooler** connection string from:
-   - Dashboard → Settings → Database → Connection Pooling
-6. Copy the full URI (includes password)
+## Database Setup
 
-### Phase 2: Backend Deployment (Render)
+This project uses **Replit’s built-in PostgreSQL database**, which eliminates the need for external database configuration.
 
-1. Login to [render.com](https://render.com)
-2. Click **New +** → **Web Service**
-3. Connect GitHub repository
-4. Configure deployment:
-   - **Name:** myura-wellness-backend
-   - **Root Directory:** `backend`
-   - **Build Command:** `npm install`
-   - **Start Command:** `npm start`
-5. Add environment variables in Render dashboard:
+When the Repl starts:
 
-| Variable | Value |
-|----------|-------|
-| `DATABASE_URL` | Supabase Session Pooler URI |
-| `JWT_SECRET` | Generate strong random string |
-| `PORT` | `5000` |
-| `FRONTEND_URL` | Your Vercel frontend URL |
-| `REQUIRE_ADMIN_AUTH` | `false` (or `true` for protection) |
-| `ADMIN_USERNAME` | Choose secure username |
-| `ADMIN_PASSWORD` | Choose secure password |
+- A PostgreSQL database is automatically provisioned.
+- The `DATABASE_URL` environment variable is automatically configured by Replit.
+- The database schema initializes during the first backend startup using the SQL schema file located in the backend directory.
 
-6. Click **Create Web Service**
-7. Verify deployment with: `https://<render-domain>/api/health`
+Since the database is managed by Replit, **no manual database setup is required**.
 
-### Phase 3: Frontend Deployment (Vercel)
+---
 
-1. Login to [vercel.com](https://vercel.com)
-2. Click **Add New...** → **Project**
-3. Import your GitHub repository
-4. Configure settings:
-   - **Framework Preset:** Vite
-   - **Root Directory:** `frontend`
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
-5. Add environment variables:
-   - `VITE_API_BASE_URL`: `https://<render-domain>/api`
-6. Click **Deploy**
-7. Vercel automatically generates frontend URL
+## Environment Variables
 
-### Phase 4: Final Integration
+For production deployment, environment variables should be configured using **Replit Secrets**.
 
-1. Update backend environment on Render:
-   - Set `FRONTEND_URL` to your new Vercel URL
-2. Redeploy backend
-3. Test API endpoints from frontend
-4. Verify order flow and stock management
+### Steps to configure secrets
+
+1. Open the project in **Replit**.
+2. Navigate to **Tools → Secrets**.
+3. Add the required environment variables for the application.
+
+These variables are used for authentication, server configuration, and application settings.
+
+> **Note:**  
+> The `DATABASE_URL` variable is automatically managed by Replit and should not be manually modified.
+
+---
+
+## Deployment on Replit
+
+### Build Configuration
+
+| Setting | Value |
+|-------|-------|
+| Build Command | `(cd frontend && npm install && npm run build) && (cd backend && npm install)` |
+| Run Command | `cd backend && PORT=5000 node src/index.js` |
+| Deployment Type | Autoscale |
+| Port | 5000 |
+
+---
+
+## Deployment Steps
+
+1. Open the project in **Replit**.
+2. Click the **Deploy** button in the top-right corner.
+3. Select **Autoscale** as the deployment type.
+4. Confirm the build and run commands.
+5. Click **Publish** to deploy the application.
+
+After deployment, Replit will generate a **public deployment URL** where the application can be accessed.
+
+---
+
+## Deployment Verification
+
+After the deployment is complete, verify the server status using the health endpoint.
+
+### Endpoint
+
+```bash
+GET /api/health
+```
+
+### Expected Response
+
+```json
+{
+  "status": "ok",
+  "timestamp": "..."
+}
+```
+
+This endpoint confirms that the backend server and API are running successfully.
+
+---
+
+## Production Architecture
+
+In production, the application runs on a **single Express server** that serves both the backend API and the frontend application.
+
+```
+Browser → Express Server (Port 5000)
+              ├── /api/* → Backend API routes
+              └── /*     → Serves built React frontend
+```
+
+The Vite development proxy (`/api → localhost:3000`) is only used during development. In production, the Express server directly serves both the API and the compiled frontend application.
 
 ---
 
